@@ -2,7 +2,7 @@
 #include "pico/stdlib.h"
 #include "inc/Motor.hpp"
 
-#define LED_DELAY_MS 1000
+#define LED_DELAY_MS 2000
 
 #define IN1_R 10
 #define IN2_R 11
@@ -49,27 +49,42 @@ int main()
 
     while (true) {
 
+        pico_set_led(true);
         printf("Frente 50\n");
         motorDireito_Frente.forward(50.0f);
         motorDireito_Tras.forward(50.0f);
         motorEsquerdo_Frente.forward(50.0f);
         motorEsquerdo_Tras.forward(50.0f);
 
-        pico_set_led(true);
         sleep_ms(LED_DELAY_MS);
 
-        printf("Frente 25\n");
-        motorDireito_Frente.forward(25.0f);
-        motorDireito_Tras.forward(25.0f);
-        motorEsquerdo_Frente.forward(25.0f);
-        motorEsquerdo_Tras.forward(25.0f);
+        motorDireito_Frente.stop();
+        motorDireito_Tras.stop();
+
+        sleep_ms(LED_DELAY_MS);
+
+        motorEsquerdo_Frente.stop();
+        motorEsquerdo_Tras.stop();
         
-        pico_set_led(false);
         sleep_ms(LED_DELAY_MS);
 
-        //printf("Parado\n");
-        //motorDireito.stop();
-        //motorEsquerdo.stop();
-        //sleep_ms(2000);
+        pico_set_led(false);
+        printf("Tras 50\n");
+        motorDireito_Frente.backward(50.0f);
+        motorDireito_Tras.backward(50.0f);
+        motorEsquerdo_Frente.backward(50.0f);
+        motorEsquerdo_Tras.backward(50.0f);
+
+        sleep_ms(LED_DELAY_MS);
+
+        motorEsquerdo_Frente.free();
+        motorEsquerdo_Tras.free();
+
+        sleep_ms(LED_DELAY_MS);
+
+        motorDireito_Frente.free();
+        motorDireito_Tras.free();
+        
+        sleep_ms(LED_DELAY_MS);
     }
 }

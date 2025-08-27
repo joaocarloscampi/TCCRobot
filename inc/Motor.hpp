@@ -14,6 +14,7 @@ public:
     void forward(float duty);
     void backward(float duty);
     void stop();
+    void free();
 
 private:
     uint in1_, in2_, en_;

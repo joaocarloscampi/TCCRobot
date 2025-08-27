@@ -37,10 +37,18 @@ void Motor::forward(float duty) {
 void Motor::backward(float duty) {
     gpio_put(in1_, 0);
     gpio_put(in2_, 1);
-    uint32_t duty_top = uint32_t(duty/100.0f) * top_;
+    uint32_t duty_top = uint32_t(duty/100.0f * top_);
     pwm_set_gpio_level(en_, duty_top);
 }
 
 void Motor::stop() {
+    gpio_put(in1_, 1);
+    gpio_put(in2_, 1);
+    pwm_set_gpio_level(en_, top_);
+}
+
+void Motor::free() {
+    gpio_put(in1_, 0);
+    gpio_put(in2_, 0);
     pwm_set_gpio_level(en_, 0);
 }
