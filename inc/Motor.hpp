@@ -1,23 +1,20 @@
 #pragma once
 #include "pico/stdlib.h"
-#include "hardware/pwm.h"
+#include "PWM.hpp"
 
 class Motor {
 public:
-    // Construtor: IN1, IN2, EN (PWM)
     Motor(uint in1, uint in2, uint en);
 
-    // Inicializa pinos e PWM
-    void init(uint32_t freq = 1000);
-
-    // Controle de movimento
-    void forward(float duty);
-    void backward(float duty);
+    void init();
+    void setDuty(float duty);
+    void forward();
+    void backward();
     void stop();
     void free();
 
 private:
-    uint in1_, in2_, en_;
-    uint slice_;
-    uint32_t top_;
+    uint in1_, in2_;
+    float duty_;
+    PWM pwm_;
 };

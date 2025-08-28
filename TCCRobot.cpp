@@ -51,10 +51,16 @@ int main()
 
         pico_set_led(true);
         printf("Frente 50\n");
-        motorDireito_Frente.forward(50.0f);
-        motorDireito_Tras.forward(50.0f);
-        motorEsquerdo_Frente.forward(50.0f);
-        motorEsquerdo_Tras.forward(50.0f);
+        motorDireito_Frente.setDuty(50.0f);
+        motorDireito_Tras.setDuty(50.0f);
+        motorEsquerdo_Frente.setDuty(50.0f);
+        motorEsquerdo_Tras.setDuty(50.0f);
+        
+
+        motorDireito_Frente.forward();
+        motorDireito_Tras.forward();
+        motorEsquerdo_Frente.forward();
+        motorEsquerdo_Tras.forward();
 
         sleep_ms(LED_DELAY_MS);
 
@@ -70,10 +76,15 @@ int main()
 
         pico_set_led(false);
         printf("Tras 50\n");
-        motorDireito_Frente.backward(50.0f);
-        motorDireito_Tras.backward(50.0f);
-        motorEsquerdo_Frente.backward(50.0f);
-        motorEsquerdo_Tras.backward(50.0f);
+        motorDireito_Frente.setDuty(50.0f);
+        motorDireito_Tras.setDuty(50.0f);
+        motorEsquerdo_Frente.setDuty(50.0f);
+        motorEsquerdo_Tras.setDuty(50.0f);
+
+        motorDireito_Frente.backward();
+        motorDireito_Tras.backward();
+        motorEsquerdo_Frente.backward();
+        motorEsquerdo_Tras.backward();
 
         sleep_ms(LED_DELAY_MS);
 
