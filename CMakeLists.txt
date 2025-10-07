@@ -52,7 +52,8 @@ pico_enable_stdio_usb(TCCRobot 0)
 target_link_libraries(TCCRobot
         pico_stdlib
         hardware_gpio
-        hardware_pwm)
+        hardware_pwm
+        hardware_spi)
 
 # Add the standard include files to the build
 target_include_directories(TCCRobot PRIVATE
