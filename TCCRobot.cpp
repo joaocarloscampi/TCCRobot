@@ -3,7 +3,7 @@
 #include "inc/Motor.hpp"
 #include "hardware/spi.h"
 
-#define LED_DELAY_MS 2000
+#define LED_DELAY_MS 10
 
 #define IN1_R 10
 #define IN2_R 11
@@ -119,12 +119,41 @@ void pico_spi_init(void)
     // Define escrita no registrador MDR1
 
     msg  =  0x00;
-    msg |= (0b01 << 0); //4 bytes counter mode
+    msg |= (0b00 << 0); //4 bytes counter mode
     // Resto dos bits mantém em 0...
     spi_write_blocking(spi0, &msg, 1);
 
     gpio_put(CS1, 1);
     sleep_us(10);
+
+    // Valor em DTR para limpar o registrador CNT
+
+    gpio_put(CS1, 0);
+    sleep_us(10);
+
+    msg  =  0x00;
+    msg  = WR | DTR; 
+    spi_write_blocking(spi0, &msg, 1);
+
+    msg = 0x00;
+    for (uint8_t i = 0; i < 4; i++)
+        spi_write_blocking(spi0, &msg, 1);
+
+    gpio_put(CS1, 1);
+    sleep_us(10);
+
+    // Carregar os dados em CNTR via LOAD command
+
+    gpio_put(CS1, 0);
+    sleep_us(10);
+
+    msg  =  0x00;
+    msg  = LOAD | CNTR; 
+    spi_write_blocking(spi0, &msg, 1);
+
+    gpio_put(CS1, 1);
+    sleep_us(10);
+
 }
 
 int main()
@@ -148,55 +177,90 @@ int main()
 
     sleep_ms(1000);
 
+    // Acionamento teste dos motores
+    printf("Frente 50\n");
+    motorDireito_Frente.setDuty(50.0f);
+    motorDireito_Tras.setDuty(50.0f);
+    motorEsquerdo_Frente.setDuty(50.0f);
+    motorEsquerdo_Tras.setDuty(50.0f);
+
+    motorDireito_Frente.forward();
+    motorDireito_Tras.forward();
+    motorEsquerdo_Frente.forward();
+    motorEsquerdo_Tras.forward();
+
     while (true) {
 
-        pico_set_led(true);
-        printf("Frente 50\n");
-        motorDireito_Frente.setDuty(50.0f);
-        motorDireito_Tras.setDuty(50.0f);
-        motorEsquerdo_Frente.setDuty(50.0f);
-        motorEsquerdo_Tras.setDuty(50.0f);
+        // ------------------------
+        // Leitura do Encoder 1
+        // ------------------------
+
+        // Acesso aos dados via SPI
+
+        uint8_t msg = 0; 
+        gpio_put(CS1, 0); 
+
+        msg = RD | CNTR; 
+        spi_write_blocking(spi0, &msg, 1); 
+
+        uint8_t msgRx[4]; 
+        for (uint8_t i = 0; i < 4; i++)
+        {
+            spi_read_blocking(spi0, 0, &msgRx[i], 1); 
+        }
+
+        gpio_put(CS1, 1); 
+        sleep_us(10);
+
+        // Conversão da mensagem recebida
+
+        unsigned int count_value=0;
         
+        count_value = (msgRx[0] << 8) + msgRx[1];
+        count_value = (count_value << 8) + msgRx[2];
+        count_value = (count_value << 8) + msgRx[3];
 
-        motorDireito_Frente.forward();
-        motorDireito_Tras.forward();
-        motorEsquerdo_Frente.forward();
-        motorEsquerdo_Tras.forward();
+        // Debug para verificar a leitura
 
-        sleep_ms(LED_DELAY_MS);
+        if(count_value > 300) 
+        { 
+            pico_set_led(true); 
+        } 
+        else 
+        { 
+            pico_set_led(false); 
+        }
 
-        motorDireito_Frente.stop();
-        motorDireito_Tras.stop();
+        // ------------------------
+        // Reset do Encoder 1
+        // ------------------------
 
-        sleep_ms(LED_DELAY_MS);
+        // Valor em DTR para limpar o registrador CNT
+        gpio_put(CS1, 0);
+        sleep_us(10);
 
-        motorEsquerdo_Frente.stop();
-        motorEsquerdo_Tras.stop();
-        
-        sleep_ms(LED_DELAY_MS);
+        msg  =  0x00;
+        msg  = WR | DTR; 
+        spi_write_blocking(spi0, &msg, 1);
 
-        pico_set_led(false);
-        printf("Tras 50\n");
-        motorDireito_Frente.setDuty(50.0f);
-        motorDireito_Tras.setDuty(50.0f);
-        motorEsquerdo_Frente.setDuty(50.0f);
-        motorEsquerdo_Tras.setDuty(50.0f);
+        msg = 0x00;
+        for (uint8_t i = 0; i < 4; i++)
+            spi_write_blocking(spi0, &msg, 1);
 
-        motorDireito_Frente.backward();
-        motorDireito_Tras.backward();
-        motorEsquerdo_Frente.backward();
-        motorEsquerdo_Tras.backward();
+        gpio_put(CS1, 1);
+        sleep_us(10);
 
-        sleep_ms(LED_DELAY_MS);
+        // Carregar os dados em CNTR via LOAD command
+        gpio_put(CS1, 0);
+        sleep_us(10);
 
-        motorEsquerdo_Frente.free();
-        motorEsquerdo_Tras.free();
+        msg  =  0x00;
+        msg  = LOAD | CNTR; 
+        spi_write_blocking(spi0, &msg, 1);
 
-        sleep_ms(LED_DELAY_MS);
+        gpio_put(CS1, 1);
+        sleep_us(10);
 
-        motorDireito_Frente.free();
-        motorDireito_Tras.free();
-        
         sleep_ms(LED_DELAY_MS);
     }
 }
