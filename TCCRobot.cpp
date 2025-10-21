@@ -45,6 +45,14 @@
 #define WR       0b10 << 6
 #define LOAD     0b11 << 6
 
+// UART Comm
+
+#define UART_ID uart0
+#define BAUD_RATE 115200
+
+#define UART_TX_PIN 0
+#define UART_RX_PIN 1
+
 int pico_led_init(void) {
     gpio_init(PICO_DEFAULT_LED_PIN);
     gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
@@ -156,6 +164,24 @@ void pico_spi_init(void)
 
 }
 
+void uart_init_pico() {
+    // Inicializa UART
+    uart_init(UART_ID, BAUD_RATE);
+
+    // Configura os pinos
+    gpio_set_function(UART_TX_PIN, GPIO_FUNC_UART);
+    gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
+
+    // Opcional: Configura formato (8 bits, 1 stop, sem paridade)
+    uart_set_format(UART_ID, 8, 1, UART_PARITY_NONE);
+
+    // Opcional: Habilita FIFO
+    uart_set_fifo_enabled(UART_ID, true);
+
+    // (Opcional) Espera um pouco para estabilizar
+    sleep_us(100);
+}
+
 int main()
 {
     stdio_init_all();
@@ -164,6 +190,8 @@ int main()
     hard_assert(rc == PICO_OK);
 
     pico_spi_init();
+
+    uart_init_pico();
 
     Motor motorDireito_Frente(IN1_R, IN2_R, ENA_R);
     Motor motorDireito_Tras(IN4_R, IN3_R, ENB_R);
@@ -189,6 +217,8 @@ int main()
     motorEsquerdo_Frente.forward();
     motorEsquerdo_Tras.forward();
 
+    char msg_uart[64];
+    
     while (true) {
 
         // ------------------------
@@ -260,6 +290,9 @@ int main()
 
         gpio_put(CS1, 1);
         sleep_us(10);
+
+        snprintf(msg_uart, sizeof(msg_uart), "Pulsos: %d \r\n", count_value);
+        uart_puts(UART_ID, msg_uart);
 
         sleep_ms(LED_DELAY_MS);
     }
