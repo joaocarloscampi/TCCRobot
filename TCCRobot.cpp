@@ -2,6 +2,7 @@
 #include "pico/stdlib.h"
 #include "inc/Motor.hpp"
 #include "hardware/spi.h"
+#include "inc/Encoder.hpp"
 
 #define LED_DELAY_MS 10
 
@@ -29,21 +30,6 @@
 #define CS2 3
 #define CS3 4
 #define CS4 5
-
-// IR SPI bits
-
-#define MDR0    0b001 << 3
-#define MDR1    0b010 << 3
-#define DTR     0b011 << 3
-#define CNTR    0b100 << 3
-#define OTR     0b101 << 3
-#define STR     0b110 << 3
-#define NONE    0b111 << 3
-
-#define CLR      0b00 << 6
-#define RD       0b01 << 6
-#define WR       0b10 << 6
-#define LOAD     0b11 << 6
 
 // UART Comm
 
@@ -93,75 +79,6 @@ void pico_spi_init(void)
     gpio_set_function(MOSI_SPI0, GPIO_FUNC_SPI);
     gpio_set_function(MISO_SPI0, GPIO_FUNC_SPI);
 
-    uint8_t msg;
-
-    // Configura Encoder 1
-
-    gpio_put(CS1, 0);
-    sleep_us(10);
-
-    // Define escrita no registrador MDR0
-    msg = WR | MDR0;
-    spi_write_blocking(spi0, &msg, 1);
-
-    // Define escrita no registrador MDR0
-    msg  =  0x00;
-    msg |= (0b11 << 0);  //x4 quad count mode
-    msg |= (0b00 << 2);  //free-running
-    msg |= (0b00 << 4);  //disable index
-    msg |= (0b0  << 6);  //Assincronous
-    msg |= (0b0  << 7);  //Filter Clock 1
-    spi_write_blocking(spi0, &msg, 1);
-
-    gpio_put(CS1, 1);
-    sleep_us(10);
-
-    // Define escrita no registrador MDR1
-    gpio_put(CS1, 0);
-    sleep_us(10);
-
-    msg = 0x00;
-    msg = WR | MDR1;
-    spi_write_blocking(spi0, &msg, 1);
-
-    // Define escrita no registrador MDR1
-
-    msg  =  0x00;
-    msg |= (0b00 << 0); //4 bytes counter mode
-    // Resto dos bits mantém em 0...
-    spi_write_blocking(spi0, &msg, 1);
-
-    gpio_put(CS1, 1);
-    sleep_us(10);
-
-    // Valor em DTR para limpar o registrador CNT
-
-    gpio_put(CS1, 0);
-    sleep_us(10);
-
-    msg  =  0x00;
-    msg  = WR | DTR; 
-    spi_write_blocking(spi0, &msg, 1);
-
-    msg = 0x00;
-    for (uint8_t i = 0; i < 4; i++)
-        spi_write_blocking(spi0, &msg, 1);
-
-    gpio_put(CS1, 1);
-    sleep_us(10);
-
-    // Carregar os dados em CNTR via LOAD command
-
-    gpio_put(CS1, 0);
-    sleep_us(10);
-
-    msg  =  0x00;
-    msg  = LOAD | CNTR; 
-    spi_write_blocking(spi0, &msg, 1);
-
-    gpio_put(CS1, 1);
-    sleep_us(10);
-
 }
 
 void uart_init_pico() {
@@ -203,6 +120,16 @@ int main()
     motorEsquerdo_Frente.init();
     motorEsquerdo_Tras.init();
 
+    Encoder encoder1(spi0, CS1);
+    Encoder encoder2(spi0, CS2);
+    Encoder encoder3(spi0, CS3);
+    Encoder encoder4(spi0, CS4);
+
+    encoder1.init();
+    encoder2.init();
+    encoder3.init();
+    encoder4.init();
+
     sleep_ms(1000);
 
     // Acionamento teste dos motores
@@ -221,77 +148,25 @@ int main()
     
     while (true) {
 
-        // ------------------------
-        // Leitura do Encoder 1
-        // ------------------------
-
-        // Acesso aos dados via SPI
-
-        uint8_t msg = 0; 
-        gpio_put(CS1, 0); 
-
-        msg = RD | CNTR; 
-        spi_write_blocking(spi0, &msg, 1); 
-
-        uint8_t msgRx[4]; 
-        for (uint8_t i = 0; i < 4; i++)
-        {
-            spi_read_blocking(spi0, 0, &msgRx[i], 1); 
-        }
-
-        gpio_put(CS1, 1); 
-        sleep_us(10);
-
-        // Conversão da mensagem recebida
-
-        unsigned int count_value=0;
-        
-        count_value = (msgRx[0] << 8) + msgRx[1];
-        count_value = (count_value << 8) + msgRx[2];
-        count_value = (count_value << 8) + msgRx[3];
-
         // Debug para verificar a leitura
 
-        if(count_value > 300) 
-        { 
-            pico_set_led(true); 
-        } 
-        else 
-        { 
-            pico_set_led(false); 
-        }
+        int count_values[4] = {0};
 
-        // ------------------------
-        // Reset do Encoder 1
-        // ------------------------
+        count_values[0] = encoder1.getPulses();
+        encoder1.resetPulses();
+        count_values[1] = encoder2.getPulses();
+        encoder2.resetPulses();
+        count_values[2] = encoder3.getPulses();
+        encoder3.resetPulses();
+        count_values[3] = encoder4.getPulses();
+        encoder4.resetPulses();
 
-        // Valor em DTR para limpar o registrador CNT
-        gpio_put(CS1, 0);
-        sleep_us(10);
+        // Envio de dados via UART
 
-        msg  =  0x00;
-        msg  = WR | DTR; 
-        spi_write_blocking(spi0, &msg, 1);
-
-        msg = 0x00;
-        for (uint8_t i = 0; i < 4; i++)
-            spi_write_blocking(spi0, &msg, 1);
-
-        gpio_put(CS1, 1);
-        sleep_us(10);
-
-        // Carregar os dados em CNTR via LOAD command
-        gpio_put(CS1, 0);
-        sleep_us(10);
-
-        msg  =  0x00;
-        msg  = LOAD | CNTR; 
-        spi_write_blocking(spi0, &msg, 1);
-
-        gpio_put(CS1, 1);
-        sleep_us(10);
-
-        snprintf(msg_uart, sizeof(msg_uart), "Pulsos: %d \r\n", count_value);
+        snprintf(msg_uart, sizeof(msg_uart), "%d;%d;%d;%d\r\n", count_values[0],
+                                                                count_values[1],
+                                                                count_values[2],
+                                                                count_values[3]);
         uart_puts(UART_ID, msg_uart);
 
         sleep_ms(LED_DELAY_MS);
