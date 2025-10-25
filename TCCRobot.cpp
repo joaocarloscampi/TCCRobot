@@ -2,9 +2,9 @@
 #include "pico/stdlib.h"
 #include "inc/Motor.hpp"
 #include "hardware/spi.h"
-#include "inc/Encoder.hpp"
 
 #define LED_DELAY_MS 10
+#define STEP_TIME_DELAY_MS 1000 
 
 #define IN1_R 10
 #define IN2_R 11
@@ -110,34 +110,24 @@ int main()
 
     uart_init_pico();
 
-    Motor motorDireito_Frente(IN1_R, IN2_R, ENA_R);
-    Motor motorDireito_Tras(IN4_R, IN3_R, ENB_R);
-    Motor motorEsquerdo_Frente(IN2_L, IN1_L, ENA_L);
-    Motor motorEsquerdo_Tras(IN4_L, IN3_L, ENB_L);
+    Motor motorDireito_Frente(IN1_R, IN2_R, ENA_R, CS1, spi0);
+    Motor motorDireito_Tras(IN4_R, IN3_R, ENB_R, CS2, spi0);
+    Motor motorEsquerdo_Frente(IN2_L, IN1_L, ENA_L, CS3, spi0);
+    Motor motorEsquerdo_Tras(IN4_L, IN3_L, ENB_L, CS4, spi0);
 
     motorDireito_Frente.init();
     motorDireito_Tras.init();
     motorEsquerdo_Frente.init();
     motorEsquerdo_Tras.init();
 
-    Encoder encoder1(spi0, CS1);
-    Encoder encoder2(spi0, CS2);
-    Encoder encoder3(spi0, CS3);
-    Encoder encoder4(spi0, CS4);
-
-    encoder1.init();
-    encoder2.init();
-    encoder3.init();
-    encoder4.init();
-
     sleep_ms(1000);
 
-    // Acionamento teste dos motores
-    printf("Frente 50\n");
-    motorDireito_Frente.setDuty(50.0f);
-    motorDireito_Tras.setDuty(50.0f);
-    motorEsquerdo_Frente.setDuty(50.0f);
-    motorEsquerdo_Tras.setDuty(50.0f);
+    // Degrau iniciando em 0 - não travado
+    printf("Frente 0\n");
+    motorDireito_Frente.setDuty(0.0f);
+    motorDireito_Tras.setDuty(0.0f);
+    motorEsquerdo_Frente.setDuty(0.0f);
+    motorEsquerdo_Tras.setDuty(0.0f);
 
     motorDireito_Frente.forward();
     motorDireito_Tras.forward();
@@ -145,28 +135,67 @@ int main()
     motorEsquerdo_Tras.forward();
 
     char msg_uart[64];
+
+    absolute_time_t start_time = get_absolute_time();
+    bool step_time = false;
+    int64_t elapsed_us = 0;
+    int elapsed_sec = 0;
+    int elapsed_ms = 0;
     
     while (true) {
+        // Tempo atual
+        absolute_time_t now_time = get_absolute_time();
+
+        // Calcula diferença em microssegundos
+        elapsed_us = absolute_time_diff_us(start_time, now_time);
+
+        elapsed_sec = elapsed_us / (1000*1000);
+        elapsed_ms = elapsed_us / (1000) - 1000*elapsed_sec;
+
+        if(!step_time)
+        {
+            if(elapsed_us > STEP_TIME_DELAY_MS*1000)
+            {
+                // Acionamento teste dos motores
+                float duty_cicle = 100.0f;
+                printf("Frente 0\n");
+                motorDireito_Frente.setDuty(duty_cicle);
+                motorDireito_Tras.setDuty(duty_cicle);
+                motorEsquerdo_Frente.setDuty(duty_cicle);
+                motorEsquerdo_Tras.setDuty(duty_cicle);
+
+                motorDireito_Frente.forward();
+                motorDireito_Tras.forward();
+                motorEsquerdo_Frente.forward();
+                motorEsquerdo_Tras.forward();
+
+                step_time = true;
+            }
+        }
 
         // Debug para verificar a leitura
 
         int count_values[4] = {0};
 
-        count_values[0] = encoder1.getPulses();
-        encoder1.resetPulses();
-        count_values[1] = encoder2.getPulses();
-        encoder2.resetPulses();
-        count_values[2] = encoder3.getPulses();
-        encoder3.resetPulses();
-        count_values[3] = encoder4.getPulses();
-        encoder4.resetPulses();
+        count_values[0] = motorDireito_Frente.get_encoder_pulses();
+        motorDireito_Frente.reset_encoder_pulses();
+        count_values[1] = motorDireito_Tras.get_encoder_pulses();
+        motorDireito_Tras.reset_encoder_pulses();
+        count_values[2] = motorEsquerdo_Frente.get_encoder_pulses();
+        motorEsquerdo_Frente.reset_encoder_pulses();
+        count_values[3] = motorEsquerdo_Tras.get_encoder_pulses();
+        motorEsquerdo_Tras.reset_encoder_pulses();
 
         // Envio de dados via UART
 
-        snprintf(msg_uart, sizeof(msg_uart), "%d;%d;%d;%d\r\n", count_values[0],
-                                                                count_values[1],
-                                                                count_values[2],
-                                                                count_values[3]);
+        snprintf(msg_uart, sizeof(msg_uart), "%d;%d;%d;%d;%d;%d;%d\r\n",  step_time,
+                                                                    count_values[0],
+                                                                    count_values[1],
+                                                                    count_values[2],
+                                                                    count_values[3],
+                                                                    elapsed_sec,
+                                                                    elapsed_ms);
+
         uart_puts(UART_ID, msg_uart);
 
         sleep_ms(LED_DELAY_MS);

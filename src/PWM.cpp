@@ -18,8 +18,8 @@ void PWM::setDuty(float duty)
 {
     if (duty < 0.0f) duty = 0.0f;
     if (duty > 100.0f) duty = 100.0f;
-    uint32_t level = static_cast<uint32_t>((duty / 100.0f) * top_);
-    pwm_set_gpio_level(pin_, level);
+    level_ = static_cast<uint32_t>((duty / 100.0f) * top_);
+    pwm_set_gpio_level(pin_, level_);
 }
 
 void PWM::enable() 
@@ -30,4 +30,14 @@ void PWM::enable()
 void PWM::disable() 
 {
     pwm_set_enabled(slice_, false);
+}
+
+uint32_t PWM::getLevel()
+{
+    return level_;
+}
+
+uint32_t PWM::getTop()
+{
+    return top_;
 }

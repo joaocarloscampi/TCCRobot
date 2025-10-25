@@ -13,10 +13,15 @@ public:
     void enable();
     void disable();
 
+    uint32_t getLevel();
+    uint32_t getTop();
+
+
 private:
     uint pin_;
     uint slice_;
     uint32_t top_;
+    uint32_t level_; 
 };
 
 #endif
