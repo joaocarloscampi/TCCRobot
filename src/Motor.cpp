@@ -5,6 +5,7 @@ Motor::Motor(uint in1, uint in2, uint en, uint8_t encoder_cs_pin, spi_inst_t *sp
 
 void Motor::init() 
 {
+    // Define os pinos GPIO de direção IN
     gpio_init(in1_); gpio_set_dir(in1_, GPIO_OUT);
     gpio_init(in2_); gpio_set_dir(in2_, GPIO_OUT);
 
