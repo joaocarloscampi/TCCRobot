@@ -35,7 +35,12 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(TCCRobot TCCRobot.cpp src/Motor.cpp src/PWM.cpp)
+add_executable( TCCRobot 
+                TCCRobot.cpp 
+                src/Motor.cpp 
+                src/PWM.cpp 
+                src/Encoder.cpp
+                src/Hardware.cpp)
 
 target_include_directories(TCCRobot PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/inc
@@ -52,7 +57,8 @@ pico_enable_stdio_usb(TCCRobot 0)
 target_link_libraries(TCCRobot
         pico_stdlib
         hardware_gpio
-        hardware_pwm)
+        hardware_pwm
+        hardware_spi)
 
 # Add the standard include files to the build
 target_include_directories(TCCRobot PRIVATE

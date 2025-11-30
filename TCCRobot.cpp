@@ -1,44 +1,44 @@
-#include <stdio.h>
-#include "pico/stdlib.h"
+// TCCRobot includes
+#include "inc/Hardware.h"
 #include "inc/Motor.hpp"
 
-#define LED_DELAY_MS 2000
+// Timers defines
+#define LED_DELAY_MS 10
+#define STEP_TIME_DELAY_MS 1000 
 
-#define IN1_R 10
-#define IN2_R 11
-#define IN3_R 12
-#define IN4_R 13
-#define ENA_R 6
-#define ENB_R 7
+// UART Comm
+#define UART_ID uart0
+#define BAUD_RATE 115200
 
-#define IN1_L 20
-#define IN2_L 21
-#define IN3_L 22
-#define IN4_L 26
-#define ENA_L 8
-#define ENB_L 9
+// SPI Comm
+spi_inst_t *spi = spi0;
 
-int pico_led_init(void) {
-    gpio_init(PICO_DEFAULT_LED_PIN);
-    gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
-    return PICO_OK;
-}
+// Auxiliar Variables
+char msg_uart[64];          // Array for UART messages 
 
-void pico_set_led(bool led_on) {
-    gpio_put(PICO_DEFAULT_LED_PIN, led_on);
-}
+int64_t elapsed_us = 0;     // Timer for step input (microsseconds)
+int elapsed_sec = 0;        // Timer for step input (seconds)
+int elapsed_ms = 0;         // Timer for step input (milisseconds)
+
+bool step_time = false;     // Step has started
 
 int main()
 {
+    // Raspberry Pi Pico innit
     stdio_init_all();
 
     int rc = pico_led_init();
     hard_assert(rc == PICO_OK);
 
-    Motor motorDireito_Frente(IN1_R, IN2_R, ENA_R);
-    Motor motorDireito_Tras(IN4_R, IN3_R, ENB_R);
-    Motor motorEsquerdo_Frente(IN2_L, IN1_L, ENA_L);
-    Motor motorEsquerdo_Tras(IN4_L, IN3_L, ENB_L);
+    pico_spi_init(spi);
+
+    uart_init_pico(UART_ID, BAUD_RATE);
+
+    // Motor objects
+    Motor motorDireito_Frente(IN1_R, IN2_R, ENA_R, CS1, spi);
+    Motor motorDireito_Tras(IN4_R, IN3_R, ENB_R, CS2, spi);
+    Motor motorEsquerdo_Frente(IN2_L, IN1_L, ENA_L, CS3, spi);
+    Motor motorEsquerdo_Tras(IN4_L, IN3_L, ENB_L, CS4, spi);
 
     motorDireito_Frente.init();
     motorDireito_Tras.init();
@@ -47,55 +47,77 @@ int main()
 
     sleep_ms(1000);
 
+    // Degrau iniciando em 0 - Motor não travado
+    printf("Frente 0\n");
+    motorDireito_Frente.setDuty(0.0f);
+    motorDireito_Tras.setDuty(0.0f);
+    motorEsquerdo_Frente.setDuty(0.0f);
+    motorEsquerdo_Tras.setDuty(0.0f);
+
+    motorDireito_Frente.forward();
+    motorDireito_Tras.forward();
+    motorEsquerdo_Frente.forward();
+    motorEsquerdo_Tras.forward();
+
+    absolute_time_t start_time = get_absolute_time();
+    
     while (true) {
+        // Tempo atual
+        absolute_time_t now_time = get_absolute_time();
 
-        pico_set_led(true);
-        printf("Frente 50\n");
-        motorDireito_Frente.setDuty(50.0f);
-        motorDireito_Tras.setDuty(50.0f);
-        motorEsquerdo_Frente.setDuty(50.0f);
-        motorEsquerdo_Tras.setDuty(50.0f);
-        
+        // Calcula diferença em microssegundos
+        elapsed_us = absolute_time_diff_us(start_time, now_time);
 
-        motorDireito_Frente.forward();
-        motorDireito_Tras.forward();
-        motorEsquerdo_Frente.forward();
-        motorEsquerdo_Tras.forward();
+        // Conversão de escala - Step Logging
+        elapsed_sec = elapsed_us / (1000*1000);
+        elapsed_ms = elapsed_us / (1000) - 1000*elapsed_sec;
 
-        sleep_ms(LED_DELAY_MS);
+        if(!step_time && elapsed_us > STEP_TIME_DELAY_MS*1000)
+        {
+            pico_set_led(true);
+            // Acionamento teste dos motores
+            float duty_cicle = 100.0f;
+            printf("Frente 0\n");
+            motorDireito_Frente.setDuty(duty_cicle);
+            motorDireito_Tras.setDuty(duty_cicle);
+            motorEsquerdo_Frente.setDuty(duty_cicle);
+            motorEsquerdo_Tras.setDuty(duty_cicle);
 
-        motorDireito_Frente.stop();
-        motorDireito_Tras.stop();
+            motorDireito_Frente.forward();
+            motorDireito_Tras.forward();
+            motorEsquerdo_Frente.forward();
+            motorEsquerdo_Tras.forward();
 
-        sleep_ms(LED_DELAY_MS);
+            step_time = true;
+        }
 
-        motorEsquerdo_Frente.stop();
-        motorEsquerdo_Tras.stop();
-        
-        sleep_ms(LED_DELAY_MS);
+        // Aquisição da leitura do encoder
 
-        pico_set_led(false);
-        printf("Tras 50\n");
-        motorDireito_Frente.setDuty(50.0f);
-        motorDireito_Tras.setDuty(50.0f);
-        motorEsquerdo_Frente.setDuty(50.0f);
-        motorEsquerdo_Tras.setDuty(50.0f);
+        int count_values[4] = {0};
 
-        motorDireito_Frente.backward();
-        motorDireito_Tras.backward();
-        motorEsquerdo_Frente.backward();
-        motorEsquerdo_Tras.backward();
+        count_values[0] = motorDireito_Frente.get_encoder_pulses();
+        motorDireito_Frente.reset_encoder_pulses();
+        count_values[1] = motorDireito_Tras.get_encoder_pulses();
+        motorDireito_Tras.reset_encoder_pulses();
+        count_values[2] = motorEsquerdo_Frente.get_encoder_pulses();
+        motorEsquerdo_Frente.reset_encoder_pulses();
+        count_values[3] = motorEsquerdo_Tras.get_encoder_pulses();
+        motorEsquerdo_Tras.reset_encoder_pulses();
 
-        sleep_ms(LED_DELAY_MS);
+        // Envio de dados via UART - Step info
 
-        motorEsquerdo_Frente.free();
-        motorEsquerdo_Tras.free();
+        snprintf(msg_uart, sizeof(msg_uart), "%d;%d;%d;%d;%d;%d;%d\r\n",  step_time,
+                                                                    count_values[0],
+                                                                    count_values[1],
+                                                                    count_values[2],
+                                                                    count_values[3],
+                                                                    elapsed_sec,
+                                                                    elapsed_ms);
 
-        sleep_ms(LED_DELAY_MS);
+        uart_puts(UART_ID, msg_uart);
 
-        motorDireito_Frente.free();
-        motorDireito_Tras.free();
-        
+        // Delay fixo para o loop 
+        // Checklist #4
         sleep_ms(LED_DELAY_MS);
     }
 }
