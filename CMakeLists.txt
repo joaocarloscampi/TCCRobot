@@ -35,7 +35,12 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(TCCRobot TCCRobot.cpp src/Motor.cpp src/PWM.cpp src/Encoder.cpp)
+add_executable( TCCRobot 
+                TCCRobot.cpp 
+                src/Motor.cpp 
+                src/PWM.cpp 
+                src/Encoder.cpp
+                src/Hardware.cpp)
 
 target_include_directories(TCCRobot PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/inc

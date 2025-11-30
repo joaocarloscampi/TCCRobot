@@ -1,3 +1,8 @@
+// Raspberry native includes
+#include <stdio.h>
+#include "pico/stdlib.h"
+#include "hardware/spi.h"
+
 // H-Bridge L298N Connections
 #define IN1_R 10
 #define IN2_R 11
@@ -26,3 +31,10 @@
 // UART Communication
 #define UART_TX_PIN 0
 #define UART_RX_PIN 1
+
+// Functions
+int pico_led_init(void);
+void pico_set_led(bool led_on);
+
+void pico_spi_init(spi_inst_t *spi);
+void uart_init_pico(uart_inst_t *UART_ID, int BAUD_RATE);

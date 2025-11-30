@@ -111,9 +111,6 @@ public:
      */
     void reset_encoder_pulses();
 
-    // Checklist #1
-    PWM pwm_;
-
 private:
     uint8_t Encoder_CS_Pin_;
     uint in1_, in2_;
@@ -121,4 +118,6 @@ private:
     
     Encoder encoder_;
     spi_inst_t* spi_;
+
+    PWM pwm_;
 };

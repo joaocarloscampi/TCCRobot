@@ -71,12 +71,10 @@ public:
      */
     void resetPulses();
 
-    // Checklist 
-    uint32_t lastPulses;
-
 private:
     spi_inst_t* spi_handler_;
     uint8_t CS_Pin_;
+    uint32_t lastPulses;
 
 };
 
