@@ -20,6 +20,8 @@
 #define WR       0b10 << 6
 #define LOAD     0b11 << 6
 
+#define ENCODER_PPR 400.0f
+
 /**
  * @brief Classe para gerenciar a comunicação cSPI om LS74366 (Leitura do Encoder)
  * 
@@ -60,7 +62,7 @@ public:
      * 
      * @return encoder_pulses [uint32_t] Contém a quantidade de pulsos acumulados
      */
-    uint32_t getPulses();
+    int32_t getPulses();
 
     /**
      * @brief Reseta o contador de pulsos do encoder para 0

@@ -90,7 +90,7 @@ void Encoder::init() {
     sleep_us(10);
 }
 
-uint32_t Encoder::getPulses()
+int32_t Encoder::getPulses()
 {
     // Acesso aos dados via SPI
 
@@ -111,7 +111,7 @@ uint32_t Encoder::getPulses()
 
     // Conversão da mensagem recebida
 
-    uint32_t count_value=0;
+    int32_t count_value=0;
     
     count_value = (msgRx[0] << 8) + msgRx[1];
     count_value = (count_value << 8) + msgRx[2];

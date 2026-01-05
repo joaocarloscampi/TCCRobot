@@ -40,7 +40,8 @@ add_executable( TCCRobot
                 src/Motor.cpp 
                 src/PWM.cpp 
                 src/Encoder.cpp
-                src/Hardware.cpp)
+                src/Hardware.cpp
+                src/PIDControl.cpp)
 
 target_include_directories(TCCRobot PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/inc
