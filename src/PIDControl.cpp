@@ -15,6 +15,10 @@ PIDControl::PIDControl()
       output_k_(0.0f),
       output_k_1(0.0f),
       output_k_2(0.0f),
+      y_k_(0.0f),
+      y_k_1(0.0f),
+      y_k_2(0.0f),
+      m_(0.0f),
       integral_(0.0f)
 {}
 
@@ -45,69 +49,56 @@ void PIDControl::reset() {
 
 // Atualiza a ação de controle usando o erro atual (PID posição).
 // Anti-windup: clamping simples: só integra quando a integração não levaria a saturação adicional.
-float PIDControl::update(float error) {
+float PIDControl::update(float speed_measurement) {
     // Shift histórico de erros e saídas
+    y_k_2 = y_k_1;
+    y_k_1 = y_k_;
+    y_k_ = speed_measurement;
+
     error_k_2 = error_k_1;
     error_k_1 = error_k_;
-    error_k_  = error;
+    error_k_  = getSetpoint() - y_k_;
 
     output_k_2 = output_k_1;
     output_k_1 = output_k_;
 
     /*
-
-    // Proporcional
-    float P = Kp_ * error_k_;
-
-    // Derivada (diferença entre erro atual e anterior) / Ts
-    float D = 0.0f;
-    if (Ts_ != 0.0f) {
-        D = Kd_ * (error_k_ - error_k_1) / Ts_;
-    }
-
-    // Integral: decisão de clamping (anti-windup simples)
-    // Calculamos um valor de prova (sem atualização da integral) e avaliamos se isto levaria à saturação.
-    // Se o resultado estiver saturando e a integração estaria aumentando a saturação na mesma direção,
-    // então NÃO atualizamos a integral (congele-a). Caso contrário, integramos normalmente.
-    //
-    // Observação: Ki_ já é ganho "bruto". A integração se faz como integral += Ki * error * Ts.
-
-    // cálculo do termo integral proposto
-    float integral_proposed = integral_ + Ki_ * error_k_ * Ts_;
-
-    // controle "proposto" com integral_proposed
-    float u_proposed = P + integral_proposed + D;
-
-    // condição de saturação e sinal do erro:
-    bool saturating_high = (u_proposed > max_output_);
-    bool saturating_low  = (u_proposed < min_output_);
-
-    // Se estivermos propondo saturação alta e a integração está aumentando a saída (erro positivo),
-    // então não atualize integral (congele).
-    bool integrate = true;
-    if (saturating_high && (error_k_ > 0.0f)) {
-        integrate = false;
-    } else if (saturating_low && (error_k_ < 0.0f)) {
-        integrate = false;
-    }
-
-    if (integrate) {
-        integral_ = integral_proposed;
-    }
-    // else integral_ permanece sem alteração (clamped)
-
-    // Monta saída final (antes de saturar)
-    float u = P + integral_ + D;
-
-    */
-
+    // Controlador antigo - PI discreto projetado
     alpha = Kp_ + Ki_*Ts_/2;
     beta = Ki_*Ts_/2 - Kp_;
 
     float u = alpha * error_k_ + beta * error_k_1 + output_k_1;
 
+    */
+
+    // Controlador atual - Incremental
+
+    float Kc = Kp_;
+    float Ti = Kp_/Ki_;
+    float Td = Kc * Kd_;
+
+    float delta_m = Kc * ( (error_k_ - error_k_1) + (1/Ti * error_k_ * Ts_) - Td/Ts_ * (y_k_ - 2*y_k_1 + y_k_2));
+    
+    /*
+    if(m_ > 1.5*max_output_)
+    {
+        m_ = 1.5*max_output_;
+    }
+    else if (m_ < 1.5*min_output_)
+    {
+        m_ = 1.5*min_output_;
+    }
+    else
+    {
+        
+    }
+
+    */
+    m_ += delta_m;
+    
     // Saturação final (limit output)
-    float u_sat = saturate(u);
+    float u_sat = saturate(m_);
+    
 
     // Atualiza histórico de saídas com valor final
     output_k_ = u_sat;

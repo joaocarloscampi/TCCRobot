@@ -96,12 +96,20 @@ void Motor::control_update(){
     set_speed(speed_measurement, pulses_measurement);
 
     float error = pid_.getSetpoint() - speed_measurement;
-    float u = pid_.update(error);
+    float u = pid_.update(speed_measurement);
+
+    //u = 12;
     
-    float duty = u/V_MAX*100;
-    setDuty(duty);
-    //setDuty(00.0f);
-    forward();
+    if(u>0)
+    {
+        float duty = u/V_MAX*100;
+        setDuty(duty);
+        forward();
+    } else {
+        float duty = -u/V_MAX*100;
+        setDuty(duty);
+        backward();
+    }
 
     reset_encoder_pulses();
 }

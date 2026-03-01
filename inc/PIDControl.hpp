@@ -36,7 +36,7 @@ public:
     PIDControl(float kp, float ki, float kd, float ts);
 
     // Core
-    float update(float error); // calcula u(k) baseado no erro atual (position form)
+    float update(float speed_measurement); // calcula u(k) baseado no erro atual (position form)
 
     // Reset / inicialização
     void reset(); // zera estados internos (integral, erros e saídas)
@@ -91,13 +91,19 @@ private:
     float max_output_;
 
     // Estados para histórico (separados conforme solicitado)
-    float error_k_;      // e[k]
-    float error_k_1;     // e[k-1]
-    float error_k_2;     // e[k-2]
+    float error_k_;      // e[kT]
+    float error_k_1;     // e[(k-1)T]
+    float error_k_2;     // e[(k-2)T]
 
-    float output_k_;     // u[k]
-    float output_k_1;    // u[k-1]
-    float output_k_2;    // u[k-2]
+    float output_k_;     // m[kT]
+    float output_k_1;    // m[(k-1)T]
+    float output_k_2;    // m[(k-2)T]
+
+    float y_k_;     // y[kT]
+    float y_k_1;    // y[(k-1)T]
+    float y_k_2;    // y[(k-2)T]
+
+    float m_;             // m[kT]
 
     // Integrador (valor acumulado)
     float integral_;

@@ -76,9 +76,15 @@ int main()
     motorEsquerdo_Frente.forward();
     motorEsquerdo_Tras.forward();
 
+    /*
     motorDireito_Frente.init_controller(10.6690, 169.3840, 0, 0.01);
     motorDireito_Tras.init_controller(10.6690, 169.3840, 0, 0.01);
     motorEsquerdo_Tras.init_controller(5, 50, 0, 0.01);
+    motorEsquerdo_Frente.init_controller(10.6690, 169.3840, 0, 0.01);
+    */
+    motorDireito_Frente.init_controller(10.6690, 169.3840, 0, 0.01);
+    motorDireito_Tras.init_controller(10.6690, 169.3840, 0, 0.01);
+    motorEsquerdo_Tras.init_controller(10.6690, 169.3840, 0, 0.01);
     motorEsquerdo_Frente.init_controller(10.6690, 169.3840, 0, 0.01);
 
     motorDireito_Frente.set_control_setpoint(speed_setpoint);
