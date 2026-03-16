@@ -3,6 +3,8 @@
 PWM::PWM(uint pin) : pin_(pin) {}
 
 void PWM::init(uint32_t freq, float div) {
+
+    // TODO: Essa configuração de pwm não está correta, estourando variaveis
     gpio_set_function(pin_, GPIO_FUNC_PWM); // Define pino PWM
 
     uint32_t f_sys = 125000000; // clock base do RP2040

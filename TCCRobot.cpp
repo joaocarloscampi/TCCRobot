@@ -30,7 +30,7 @@ float speed_setpoint = 5;   // rad/s
 // Motor objects
 Motor motorDireito_Frente(IN1_R, IN2_R, ENA_R, CS1, spi, false);
 Motor motorDireito_Tras(IN4_R, IN3_R, ENB_R, CS2, spi, false);
-Motor motorEsquerdo_Tras(IN4_L, IN3_L, ENB_L, CS3, spi, true);
+Motor motorEsquerdo_Tras(IN3_L, IN4_L, ENB_L, CS3, spi, true);
 Motor motorEsquerdo_Frente(IN2_L, IN1_L, ENA_L, CS4, spi, true);
 
 bool repeating_timer_callback(__unused struct repeating_timer *t) {
