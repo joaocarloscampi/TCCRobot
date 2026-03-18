@@ -30,7 +30,7 @@ public:
      * @return None
      * 
      */
-    void init(uint32_t freq, float div = 1.0f);
+    void init(uint32_t freq);
     
      /**
      * @brief Define o duty-cicle (t_on) do sinal PWM

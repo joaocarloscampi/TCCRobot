@@ -11,12 +11,11 @@ void Motor::init()
 
     // TODO: Analisar por que colocar div=1 faz o duty dobrar na prática
     uint32_t freq = 1000;
-    float div = 2.0f;
 
     ratio_pulses_speed = 0;
     motor_speed_ = motor_pulses_ = 0;
 
-    pwm_.init(freq,div);
+    pwm_.init(freq);
     pwm_.enable();
 
     encoder_.init();
@@ -98,7 +97,7 @@ void Motor::control_update(){
     float error = pid_.getSetpoint() - speed_measurement;
     float u = pid_.update(speed_measurement);
 
-    //u = 12;
+    u = 2;
     
     if(u>0)
     {
