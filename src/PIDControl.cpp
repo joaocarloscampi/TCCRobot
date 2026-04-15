@@ -79,21 +79,21 @@ float PIDControl::update(float speed_measurement) {
 
     float delta_m = Kc * ( (error_k_ - error_k_1) + (1/Ti * error_k_ * Ts_) - Td/Ts_ * (y_k_ - 2*y_k_1 + y_k_2));
     
-    /*
-    if(m_ > 1.5*max_output_)
+    ///*
+    if(delta_m > 1*max_output_)
     {
-        m_ = 1.5*max_output_;
+        delta_m = 1*max_output_;
     }
-    else if (m_ < 1.5*min_output_)
+    else if (delta_m < 1*min_output_)
     {
-        m_ = 1.5*min_output_;
+        delta_m = 1*min_output_;
     }
     else
     {
         
     }
 
-    */
+    //*/
     m_ += delta_m;
     
     // Saturação final (limit output)

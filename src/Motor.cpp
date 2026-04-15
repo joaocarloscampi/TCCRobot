@@ -97,7 +97,7 @@ void Motor::control_update(){
     float error = pid_.getSetpoint() - speed_measurement;
     float u = pid_.update(speed_measurement);
 
-    u = 2;
+    //u = 2;
     
     if(u>0)
     {
