@@ -129,6 +129,7 @@ public:
     float get_speed();
     float get_pulses();
     float get_control_action();
+    float get_speed_filter();
     
 
 private:
@@ -139,6 +140,9 @@ private:
     float ratio_pulses_speed;
     float motor_speed_;
     float motor_pulses_;
+    float motor_speed_filter_;
+    float alpha_;
+    bool filter_speed_;
     
     Encoder encoder_;
     spi_inst_t* spi_;

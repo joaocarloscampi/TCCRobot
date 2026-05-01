@@ -9,11 +9,15 @@ void Motor::init()
     gpio_init(in1_); gpio_set_dir(in1_, GPIO_OUT);
     gpio_init(in2_); gpio_set_dir(in2_, GPIO_OUT);
 
-    // TODO: Analisar por que colocar div=1 faz o duty dobrar na prática
     uint32_t freq = 1000;
 
     ratio_pulses_speed = 0;
     motor_speed_ = motor_pulses_ = 0;
+
+    // Filtro Passa-Baixa
+    motor_speed_filter_ = 0; 
+    alpha_ = 0.8;
+    filter_speed_ = false;
 
     pwm_.init(freq);
     pwm_.enable();
@@ -94,10 +98,12 @@ void Motor::control_update(){
 
     set_speed(speed_measurement, pulses_measurement);
 
-    float error = pid_.getSetpoint() - speed_measurement;
-    float u = pid_.update(speed_measurement);
+    float speed_selected = filter_speed_ ? motor_speed_filter_ : motor_speed_;
+    
+    float error = pid_.getSetpoint() - speed_selected;
+    float u = pid_.update(speed_selected);
 
-    //u = 2;
+    //u = 8;
     
     if(u>0)
     {
@@ -117,6 +123,8 @@ void Motor::set_speed(float speed_measurement, float pulses_measurement)
 {
     motor_speed_ = speed_measurement;
     motor_pulses_ = pulses_measurement;
+
+    motor_speed_filter_ = motor_speed_filter_*(1-alpha_) +  alpha_* motor_speed_;
 }
 
 float Motor::get_speed()
@@ -126,6 +134,11 @@ float Motor::get_speed()
 float Motor::get_pulses()
 {
     return motor_pulses_;
+}
+
+float Motor::get_speed_filter()
+{
+    return motor_speed_filter_;
 }
 
 float Motor::get_control_action()
