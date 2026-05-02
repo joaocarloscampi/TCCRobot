@@ -145,3 +145,23 @@ float Motor::get_control_action()
 {
     return pid_.getLastOutput();
 }
+
+float Motor::get_gain_Kp()
+{
+    return pid_.getKp();
+}
+
+float Motor::get_gain_Ki()
+{
+    return pid_.getKi();
+}
+
+float Motor::get_gain_Kd()
+{
+    return pid_.getKd();
+}
+
+void Motor::apply_gain_scheduling(float weight)
+{
+    pid_.gainScheduling_weight(weight);
+}

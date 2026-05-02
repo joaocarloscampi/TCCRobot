@@ -67,6 +67,9 @@ public:
     float getPrevOutput2() const;    // u[k-2]
     float getIntegral() const;       // valor integral atual
 
+    // Gain Scheduling
+    void gainScheduling_weight(float extra_weight);
+
     // Utility: se quiser alimentar timestamps externos (por exemplo get_absolute_time())
     // e calcular Ts externamente, implemente chamada externa. Aqui mantemos Ts fixo.
 
@@ -112,6 +115,11 @@ private:
 
     // Função interna de saturação
     float saturate(float value) const;
+
+    // Gain Scheduling
+    float weights_test_[3] = {0, 1, 2.5};
+    float Kp_weights_[3] = {15, 10, 10};
+    float Ti_weights_[3] = {0.05, 0.12, 0.20};
 };
 
 #endif // PIDCONTROL_HPP

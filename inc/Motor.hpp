@@ -130,6 +130,10 @@ public:
     float get_pulses();
     float get_control_action();
     float get_speed_filter();
+    float get_gain_Kp();
+    float get_gain_Ki();
+    float get_gain_Kd();
+    void apply_gain_scheduling(float weight);
     
 
 private:

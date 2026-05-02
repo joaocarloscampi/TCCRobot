@@ -2,10 +2,10 @@
 
 // Construtor padrão: ganhos zerados, Ts = 1.0, limites definidos pelos macros
 PIDControl::PIDControl()
-    : Kp_(0.0f),
-      Ki_(0.0f),
+    : Kp_(15.0f),
+      Ki_(15.0f/0.05),
       Kd_(0.0f),
-      Ts_(1.0f),
+      Ts_(0.01f),
       setpoint_(0.0f),
       min_output_(PID_DEFAULT_MIN_OUTPUT),
       max_output_(PID_DEFAULT_MAX_OUTPUT),
@@ -20,7 +20,18 @@ PIDControl::PIDControl()
       y_k_2(0.0f),
       m_(0.0f),
       integral_(0.0f)
-{}
+{
+    // Valores padrão para Gain Scheduling
+    weights_test_[0] = 0;
+    weights_test_[1] = 1;
+    weights_test_[2] = 2.5;
+    Kp_weights_[0] = 15;
+    Kp_weights_[1] = 10;
+    Kp_weights_[2] = 10;
+    Ti_weights_[0] = 0.05;
+    Ti_weights_[1] = 0.12;
+    Ti_weights_[2] = 0.20;
+}
 
 // Construtor com ganhos
 PIDControl::PIDControl(float kp, float ki, float kd, float ts)
@@ -148,3 +159,39 @@ float PIDControl::getLastOutput() const { return output_k_; }
 float PIDControl::getPrevOutput() const { return output_k_1; }
 float PIDControl::getPrevOutput2() const { return output_k_2; }
 float PIDControl::getIntegral() const { return integral_; }
+
+void PIDControl::gainScheduling_weight(float extra_weight)
+{
+    // Verificação de peso adicional
+    if(extra_weight < weights_test_[0] || extra_weight > weights_test_[2])
+    {
+        setKp(weights_test_[0]);
+        setKi(weights_test_[2]);
+        return;
+    }
+        
+
+    uint8_t interval = 1;
+
+    // Caracterização de intervalo da regressão
+    if(extra_weight > weights_test_[1])
+    {
+        interval = 2;
+    }
+
+    // Calculo dos ganhos via Gain Scheduling
+    float new_Kp =  Kp_weights_[interval-1] + 
+                    (extra_weight - weights_test_[interval-1]) / (weights_test_[interval] - weights_test_[interval-1]) 
+                    * 
+                    (Kp_weights_[interval]-Kp_weights_[interval-1]);
+    
+    float new_Ti =  Ti_weights_[interval-1] + 
+                    (extra_weight - weights_test_[interval-1]) / (weights_test_[interval]-weights_test_[interval-1]) 
+                    * 
+                    (Ti_weights_[interval]-Ti_weights_[interval-1]);
+
+    setKp(new_Kp);
+    setKi(new_Kp/new_Ti);
+        
+    return;
+}

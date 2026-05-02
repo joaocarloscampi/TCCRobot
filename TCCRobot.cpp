@@ -27,6 +27,9 @@ bool led_state = false;
 
 float speed_setpoint = 5;   // rad/s
 
+float weight_extra = 1.4;
+bool enable_gainScheduling = false;
+
 // Motor objects
 Motor motorDireito_Frente(IN1_R, IN2_R, ENA_R, CS1, spi, false);
 Motor motorDireito_Tras(IN4_R, IN3_R, ENB_R, CS2, spi, false);
@@ -76,15 +79,33 @@ int main()
     motorEsquerdo_Frente.forward();
     motorEsquerdo_Tras.forward();
 
-    motorDireito_Frente.init_controller(3.5, 169.3840, 0, 0.01);
-    motorDireito_Tras.init_controller(3.5, 169.3840, 0, 0.01);
-    motorEsquerdo_Tras.init_controller(3.5, 169.3840, 0, 0.01);
-    motorEsquerdo_Frente.init_controller(3.5, 169.3840, 0, 0.01);
+    float Ts = 0.01f;
+    float Kp = 15.0f;
+    float Ti = 0.05f;
+    float Td = 0.0f;
+
+    float Ki = Kp/Ti;
+    float Kd = Kp*Td;
+
+    motorDireito_Frente.init_controller(Kp, Ki, Kd, Ts);
+    motorDireito_Tras.init_controller(Kp, Ki, Kd, Ts);
+    motorEsquerdo_Tras.init_controller(Kp, Ki, Kd, Ts);
+    motorEsquerdo_Frente.init_controller(Kp, Ki, Kd, Ts);
 
     motorDireito_Frente.set_control_setpoint(speed_setpoint);
     motorDireito_Tras.set_control_setpoint(speed_setpoint);
     motorEsquerdo_Tras.set_control_setpoint(speed_setpoint);
     motorEsquerdo_Frente.set_control_setpoint(speed_setpoint);
+
+    if(enable_gainScheduling)
+    {
+        motorDireito_Frente.apply_gain_scheduling(weight_extra);
+        motorDireito_Tras.apply_gain_scheduling(weight_extra);
+        motorEsquerdo_Tras.apply_gain_scheduling(weight_extra);
+        motorEsquerdo_Frente.apply_gain_scheduling(weight_extra);
+    }
+    
+
 
     struct repeating_timer timer;
 
@@ -133,11 +154,25 @@ int main()
         {
             ts_time = false;
 
-            motorDireito_Frente.control_update();
-            motorDireito_Tras.control_update();
-            motorEsquerdo_Tras.control_update();
-            motorEsquerdo_Frente.control_update();
+            if(elapsed_sec < 5)
+            {
+                motorDireito_Frente.control_update();
+                motorDireito_Tras.control_update();
+                motorEsquerdo_Tras.control_update();
+                motorEsquerdo_Frente.control_update();
+            }
+            else
+            {
+                motorDireito_Frente.stop();
+                motorDireito_Tras.stop();
+                motorEsquerdo_Tras.stop();
+                motorEsquerdo_Frente.stop();
+            }
 
+            
+
+            /*
+            // Log Completo
             int count_values[8] = {0};
 
             count_values[0] = motorDireito_Frente.get_pulses();
@@ -149,10 +184,21 @@ int main()
             count_values[3] = motorDireito_Tras.get_control_action()*1000;
             count_values[5] = motorEsquerdo_Tras.get_control_action()*1000;
             count_values[7] = motorEsquerdo_Frente.get_control_action()*1000;
+            */
+
+            // Log Simplificado - 1 motor
+            float count_values[8] = {0};
+
+            count_values[0] = motorEsquerdo_Tras.get_speed();
+            count_values[1] = motorEsquerdo_Tras.get_speed_filter();
+            count_values[2] = motorEsquerdo_Tras.get_control_action()*1000;
+            count_values[3] = motorEsquerdo_Tras.get_gain_Kp();
+            count_values[4] = count_values[3]/motorEsquerdo_Tras.get_gain_Ki();
 
             // Envio de dados via UART - Step info
-
             
+            /*
+            // Log Completo
             snprintf(msg_uart, sizeof(msg_uart), "%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d\r\n",  step_time,
                                                                         count_values[0],
                                                                         count_values[1],
@@ -165,6 +211,18 @@ int main()
                                                                         int(speed_setpoint),
                                                                         elapsed_sec,
                                                                         elapsed_ms);
+            */
+            
+            // Log Simplificado - 1 motor
+            snprintf(msg_uart, sizeof(msg_uart), "%.2f;%.2f;%.2f;%d;%d;%d;%.2f;%.2f\r\n",
+                                                                        count_values[0],
+                                                                        count_values[1],
+                                                                        count_values[2],
+                                                                        int(speed_setpoint),
+                                                                        elapsed_sec,
+                                                                        elapsed_ms,
+                                                                        count_values[3],
+                                                                        count_values[4]);
                                                                         
             /*snprintf(msg_uart, sizeof(msg_uart), "%d;%d;%d\r\n",  step_time,
                                                                         count_values[4],
