@@ -41,7 +41,8 @@ add_executable( TCCRobot
                 src/PWM.cpp 
                 src/Encoder.cpp
                 src/Hardware.cpp
-                src/PIDControl.cpp)
+                src/PIDControl.cpp
+                src/Communication.cpp)
 
 target_include_directories(TCCRobot PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/inc

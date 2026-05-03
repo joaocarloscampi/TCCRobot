@@ -1,6 +1,9 @@
+#include <string.h>
+
 // TCCRobot includes
 #include "inc/Hardware.h"
 #include "inc/Motor.hpp"
+#include "inc/Communication.hpp"
 
 // Timers defines
 #define TS_CONTROL 10
@@ -25,7 +28,7 @@ volatile bool ts_time = false;     // Step has started
 
 bool led_state = false;
 
-float speed_setpoint = 5;   // rad/s
+float speed_setpoint = 0;   // rad/s
 
 float weight_extra = 1.4;
 bool enable_gainScheduling = false;
@@ -59,6 +62,14 @@ int main()
     pico_spi_init(spi);
 
     uart_init_pico(UART_ID, BAUD_RATE);
+
+    Communication comm(UART_ID);
+    comm.init();
+
+    comm.add_motor(&motorDireito_Frente, 1);
+    comm.add_motor(&motorDireito_Tras, 2);
+    comm.add_motor(&motorEsquerdo_Frente, 3);
+    comm.add_motor(&motorEsquerdo_Tras, 4);
 
     motorDireito_Frente.init();
     motorDireito_Tras.init();
@@ -132,6 +143,9 @@ int main()
         elapsed_sec = elapsed_us / (1000*1000);
         elapsed_ms = elapsed_us / (1000) - 1000*elapsed_sec;
 
+        // Atualiza o handler de comunicação
+        comm.update();
+
         /*
         if( (elapsed_us > STEP_TIME_DELAY_MS*1000))
         {
@@ -154,7 +168,8 @@ int main()
         {
             ts_time = false;
 
-            if(elapsed_sec < 5)
+            /*
+            if(elapsed_sec < 50)
             {
                 motorDireito_Frente.control_update();
                 motorDireito_Tras.control_update();
@@ -168,8 +183,12 @@ int main()
                 motorEsquerdo_Tras.stop();
                 motorEsquerdo_Frente.stop();
             }
+            */
 
-            
+            motorDireito_Frente.control_update();
+            motorDireito_Tras.control_update();
+            motorEsquerdo_Tras.control_update();
+            motorEsquerdo_Frente.control_update();
 
             /*
             // Log Completo
@@ -187,6 +206,7 @@ int main()
             */
 
             // Log Simplificado - 1 motor
+            /*
             float count_values[8] = {0};
 
             count_values[0] = motorEsquerdo_Tras.get_speed();
@@ -194,6 +214,7 @@ int main()
             count_values[2] = motorEsquerdo_Tras.get_control_action()*1000;
             count_values[3] = motorEsquerdo_Tras.get_gain_Kp();
             count_values[4] = count_values[3]/motorEsquerdo_Tras.get_gain_Ki();
+            */
 
             // Envio de dados via UART - Step info
             
@@ -213,6 +234,7 @@ int main()
                                                                         elapsed_ms);
             */
             
+            /*
             // Log Simplificado - 1 motor
             snprintf(msg_uart, sizeof(msg_uart), "%.2f;%.2f;%.2f;%d;%d;%d;%.2f;%.2f\r\n",
                                                                         count_values[0],
@@ -224,11 +246,9 @@ int main()
                                                                         count_values[3],
                                                                         count_values[4]);
                                                                         
-            /*snprintf(msg_uart, sizeof(msg_uart), "%d;%d;%d\r\n",  step_time,
-                                                                        count_values[4],
-                                                                        count_values[5]);*/
+            */
 
-            uart_puts(UART_ID, msg_uart);
+            //uart_puts(UART_ID, msg_uart);
 
             pico_set_led(led_state);
             led_state = !led_state;

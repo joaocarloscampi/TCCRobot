@@ -134,6 +134,8 @@ public:
     float get_gain_Ki();
     float get_gain_Kd();
     void apply_gain_scheduling(float weight);
+    void setEnableControl(bool enable);
+    bool getEnableControl() const;
     
 
 private:
@@ -154,4 +156,6 @@ private:
     PWM pwm_;
 
     PIDControl pid_;
+
+    bool enable_control_ = false;
 };

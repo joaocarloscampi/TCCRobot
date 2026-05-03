@@ -46,6 +46,7 @@ void Motor::backward()
 
 void Motor::stop() 
 {
+    setEnableControl(false);
     gpio_put(in1_, 1);
     gpio_put(in2_, 1);
     duty_ = 100.0f;
@@ -55,6 +56,7 @@ void Motor::stop()
 
 void Motor::free() 
 {
+    setEnableControl(false);
     gpio_put(in1_, 0);
     gpio_put(in2_, 0);
     duty_ = 0;
@@ -81,10 +83,25 @@ void Motor::init_controller(float Kp, float Ki, float Kd, float Ts)
 
 void Motor::set_control_setpoint(float setpoint)
 {
-    pid_.setSetpoint(setpoint);
+    if(setpoint != 0.0f)
+    {
+        setEnableControl(true);
+        pid_.setSetpoint(setpoint);
+    }
+    else
+        stop();
+    
 }
 
 void Motor::control_update(){
+
+    if(getEnableControl() == false)
+    {
+        pid_.reset();
+        reset_encoder_pulses();
+        return;
+    }
+        
     float pulses_measurement = get_encoder_pulses();
 
     float r = 2.0*3.14159/(MOTOR_REDUCTION*ENCODER_PPR*pid_.getTs());
@@ -165,3 +182,6 @@ void Motor::apply_gain_scheduling(float weight)
 {
     pid_.gainScheduling_weight(weight);
 }
+
+bool Motor::getEnableControl() const { return enable_control_; }
+void Motor::setEnableControl(bool enable) { enable_control_ = enable; }
