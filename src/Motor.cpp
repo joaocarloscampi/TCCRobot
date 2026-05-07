@@ -99,6 +99,7 @@ void Motor::control_update(){
     {
         pid_.reset();
         reset_encoder_pulses();
+        set_speed(0,0);
         return;
     }
         

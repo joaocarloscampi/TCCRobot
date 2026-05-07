@@ -39,12 +39,24 @@ typedef enum {
     ACK_SETPOINT_M3     = 0x07,
     ACK_SETPOINT_M4     = 0x08,
     ACK_SETPOINT_ROBOT  = 0x09,
-    BROADCAST_M1        = 0x0A,
-    BROADCAST_M2        = 0x0B,
-    BROADCAST_M3        = 0x0C,
-    BROADCAST_M4        = 0x0D,
+    REQUEST_M1          = 0x0A,
+    REQUEST_M2          = 0x0B,
+    REQUEST_M3          = 0x0C,
+    REQUEST_M4          = 0x0D,
+    SPEED_M1            = 0x0E,
+    SPEED_M2            = 0x0F,
+    SPEED_M3            = 0x10,
+    SPEED_M4            = 0x11,
     ERROR_MSG           = 0xFF
 } IDs;
+
+// Definição da struct
+struct BroadCast_Control {
+    bool speed_M1 = false;
+    bool speed_M2 = false;
+    bool speed_M3 = false;
+    bool speed_M4 = false;
+};
 
 void parse_byte(uint8_t byte);
 void process_frame();
@@ -76,6 +88,7 @@ public:
     void parse_byte(uint8_t byte);
     void update();
     void add_motor(Motor* motor_address, uint8_t ID_MOTOR);
+    void broadcast_manager();
 
 private:
     uart_inst_t* uart_handler_;
@@ -103,6 +116,7 @@ private:
     Motor* motor3 = nullptr;
     Motor* motor4 = nullptr;
 
+    BroadCast_Control cnt_broad;
 
 };
 

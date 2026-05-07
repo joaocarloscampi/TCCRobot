@@ -149,11 +149,48 @@ void Communication::handle_message(uint8_t id, uint8_t* data) {
         }
 
         case SETPOINT_ROBOT: {
-            // TODO
-            float value;
-            memcpy(&value, data, 4);
-            motor4->set_control_setpoint(value);
+            float v_linear = float(data[0]) + float(data[1])/100;
+            float v_angular = float(data[2]) + float(data[3])/100;
+
+            float c = 0.1;
+            float r = 0.06;
+
+            float vL = (v_linear - c*v_angular)/r;
+            float vR = (v_linear + c*v_angular)/r;
+
+            motor1->set_control_setpoint(vR);
+            motor2->set_control_setpoint(vR);
+            motor3->set_control_setpoint(vL);
+            motor4->set_control_setpoint(vL);
             
+            break;
+        }
+
+        case REQUEST_M1: {
+            // TODO
+            bool enable_broad = data[3] & 0x01;               
+            cnt_broad.speed_M1 = enable_broad;
+            break;
+        }
+
+        case REQUEST_M2: {
+            // TODO
+            bool enable_broad = data[3] & 0x01;               
+            cnt_broad.speed_M2 = enable_broad;
+            break;
+        }
+
+        case REQUEST_M3: {
+            // TODO
+            bool enable_broad = data[3] & 0x01;               
+            cnt_broad.speed_M3 = enable_broad;
+            break;
+        }
+
+        case REQUEST_M4: {
+            // TODO
+            bool enable_broad = data[3] & 0x01;               
+            cnt_broad.speed_M4 = enable_broad;
             break;
         }
 
@@ -242,5 +279,16 @@ void Communication::add_motor(Motor* motor_address, uint8_t ID_MOTOR)
     
     default:
         return;
+    }
+}
+
+void Communication::broadcast_manager()
+{
+    if(cnt_broad.speed_M1)
+    {
+        unsigned char bytes[4];
+        float value = motor1->get_speed();
+        memcpy(bytes, &value, 4);
+        send(SPEED_M1, bytes);
     }
 }

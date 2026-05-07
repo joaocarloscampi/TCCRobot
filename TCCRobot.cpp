@@ -250,6 +250,8 @@ int main()
 
             //uart_puts(UART_ID, msg_uart);
 
+            comm.broadcast_manager();
+
             pico_set_led(led_state);
             led_state = !led_state;
         }
