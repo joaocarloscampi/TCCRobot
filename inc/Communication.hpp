@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "inc/Motor.hpp"
+#include "inc/Odometry.hpp"
 
 // ================= CONFIG =================
 #define START_HEADER 0x39
@@ -47,6 +48,8 @@ typedef enum {
     SPEED_M2            = 0x0F,
     SPEED_M3            = 0x10,
     SPEED_M4            = 0x11,
+    REQUEST_ODOM        = 0x12,
+    ODOM_LOCAL          = 0x13,
     ERROR_MSG           = 0xFF
 } IDs;
 
@@ -56,6 +59,7 @@ struct BroadCast_Control {
     bool speed_M2 = false;
     bool speed_M3 = false;
     bool speed_M4 = false;
+    bool odom_local = false;
 };
 
 void parse_byte(uint8_t byte);
@@ -88,6 +92,7 @@ public:
     void parse_byte(uint8_t byte);
     void update();
     void add_motor(Motor* motor_address, uint8_t ID_MOTOR);
+    void get_odometry(Odometry* odom);
     void broadcast_manager();
 
 private:
@@ -115,6 +120,8 @@ private:
     Motor* motor2 = nullptr;
     Motor* motor3 = nullptr;
     Motor* motor4 = nullptr;
+
+    Odometry* odometry = nullptr;
 
     BroadCast_Control cnt_broad;
 

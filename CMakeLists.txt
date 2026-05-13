@@ -42,7 +42,8 @@ add_executable( TCCRobot
                 src/Encoder.cpp
                 src/Hardware.cpp
                 src/PIDControl.cpp
-                src/Communication.cpp)
+                src/Communication.cpp
+                src/Odometry.cpp)
 
 target_include_directories(TCCRobot PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/inc

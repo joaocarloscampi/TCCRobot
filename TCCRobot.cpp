@@ -4,6 +4,7 @@
 #include "inc/Hardware.h"
 #include "inc/Motor.hpp"
 #include "inc/Communication.hpp"
+#include "inc/Odometry.hpp"
 
 // Timers defines
 #define TS_CONTROL 10
@@ -39,6 +40,8 @@ Motor motorDireito_Tras(IN4_R, IN3_R, ENB_R, CS2, spi, false);
 Motor motorEsquerdo_Tras(IN3_L, IN4_L, ENB_L, CS3, spi, true);
 Motor motorEsquerdo_Frente(IN2_L, IN1_L, ENA_L, CS4, spi, true);
 
+Odometry odometry;
+
 bool repeating_timer_callback(__unused struct repeating_timer *t) {
     ts_time = true;
     return true;
@@ -70,6 +73,8 @@ int main()
     comm.add_motor(&motorDireito_Tras, 2);
     comm.add_motor(&motorEsquerdo_Frente, 3);
     comm.add_motor(&motorEsquerdo_Tras, 4);
+
+    comm.get_odometry(&odometry);
 
     motorDireito_Frente.init();
     motorDireito_Tras.init();
@@ -250,6 +255,13 @@ int main()
 
             //uart_puts(UART_ID, msg_uart);
 
+            odometry.set_velocities(motorDireito_Frente.get_speed(),
+                                    motorDireito_Tras.get_speed(),
+                                    motorEsquerdo_Tras.get_speed(),
+                                    motorEsquerdo_Frente.get_speed());
+
+
+            odometry.update();
             comm.broadcast_manager();
 
             pico_set_led(led_state);

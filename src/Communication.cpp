@@ -166,31 +166,38 @@ void Communication::handle_message(uint8_t id, uint8_t* data) {
             break;
         }
 
-        case REQUEST_M1: {
-            // TODO
+        case REQUEST_M1: 
+        {
             bool enable_broad = data[3] & 0x01;               
             cnt_broad.speed_M1 = enable_broad;
             break;
         }
 
-        case REQUEST_M2: {
-            // TODO
+        case REQUEST_M2: 
+        {
             bool enable_broad = data[3] & 0x01;               
             cnt_broad.speed_M2 = enable_broad;
             break;
         }
 
-        case REQUEST_M3: {
-            // TODO
+        case REQUEST_M3: 
+        {
             bool enable_broad = data[3] & 0x01;               
             cnt_broad.speed_M3 = enable_broad;
             break;
         }
 
-        case REQUEST_M4: {
-            // TODO
+        case REQUEST_M4: 
+        {
             bool enable_broad = data[3] & 0x01;               
             cnt_broad.speed_M4 = enable_broad;
+            break;
+        }
+
+        case REQUEST_ODOM: 
+        {
+            bool enable_broad = data[3] & 0x01;               
+            cnt_broad.odom_local = enable_broad;
             break;
         }
 
@@ -282,6 +289,11 @@ void Communication::add_motor(Motor* motor_address, uint8_t ID_MOTOR)
     }
 }
 
+void Communication::get_odometry(Odometry* odom)
+{
+    odometry = odom;
+}
+
 void Communication::broadcast_manager()
 {
     if(cnt_broad.speed_M1)
@@ -290,5 +302,22 @@ void Communication::broadcast_manager()
         float value = motor1->get_speed();
         memcpy(bytes, &value, 4);
         send(SPEED_M1, bytes);
+    }
+
+    if(cnt_broad.odom_local)
+    {
+        uint8_t bytes[4];
+        float x_pos = odometry->get_x_local();
+        float y_pos = odometry->get_y_local();
+        float theta_pos = odometry->get_theta_local();
+        
+        
+        bytes[0] = uint8_t(x_pos);
+        bytes[1] = uint8_t((x_pos-bytes[0])*100);
+        bytes[2] = uint8_t(theta_pos);
+        bytes[3] = uint8_t((theta_pos-bytes[2])*100);
+        
+
+        send(ODOM_LOCAL, bytes);
     }
 }
