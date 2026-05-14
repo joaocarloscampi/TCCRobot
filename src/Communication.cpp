@@ -149,8 +149,15 @@ void Communication::handle_message(uint8_t id, uint8_t* data) {
         }
 
         case SETPOINT_ROBOT: {
-            float v_linear = float(data[0]) + float(data[1])/100;
-            float v_angular = float(data[2]) + float(data[3])/100;
+            int16_t v_linear_int = (int16_t)(data[0] | (data[1] << 8));
+            int16_t v_angular_int = (int16_t)(data[2] | (data[3] << 8));
+
+            float escala = 1000.0f;
+
+            float v_linear = v_linear_int / escala;
+            float v_angular = v_angular_int / escala;
+            //float v_linear = float(data[0]) + float(data[1])/100;
+            //float v_angular = float(data[2]) + float(data[3])/100;
 
             float c = 0.1;
             float r = 0.06;
@@ -196,8 +203,12 @@ void Communication::handle_message(uint8_t id, uint8_t* data) {
 
         case REQUEST_ODOM: 
         {
-            bool enable_broad = data[3] & 0x01;               
-            cnt_broad.odom_local = enable_broad;
+            bool enable_broad = data[3] & 0x01;   
+            bool enable_odom_local = ((data[3] & 0x02) >> 1  & enable_broad); 
+            bool enable_odom_global = ((data[3] & 0x04) >> 2 & enable_broad);          
+            cnt_broad.broad_odom = enable_broad;
+            cnt_broad.odom_local = enable_odom_local;
+            cnt_broad.odom_global = enable_odom_global;
             break;
         }
 
@@ -304,7 +315,7 @@ void Communication::broadcast_manager()
         send(SPEED_M1, bytes);
     }
 
-    if(cnt_broad.odom_local)
+    if(cnt_broad.broad_odom && cnt_broad.odom_local)
     {
         uint8_t bytes[4];
         float x_pos = odometry->get_x_local();
@@ -319,5 +330,23 @@ void Communication::broadcast_manager()
         
 
         send(ODOM_LOCAL, bytes);
+    }
+
+    if(cnt_broad.broad_odom && cnt_broad.odom_global)
+    {
+        uint8_t bytes[4];
+        float x_pos = odometry->get_x_global();
+        float y_pos = odometry->get_y_global();
+        float theta_pos = odometry->get_theta_global();
+        
+        memcpy(bytes, &x_pos, 4);
+        send(ODOM_GLOBAL_X, bytes);
+
+        memcpy(bytes, &y_pos, 4);
+        send(ODOM_GLOBAL_Y, bytes);
+
+        memcpy(bytes, &theta_pos, 4);
+        send(ODOM_GLOBAL_T, bytes);
+
     }
 }

@@ -50,6 +50,9 @@ typedef enum {
     SPEED_M4            = 0x11,
     REQUEST_ODOM        = 0x12,
     ODOM_LOCAL          = 0x13,
+    ODOM_GLOBAL_X       = 0x14,
+    ODOM_GLOBAL_Y       = 0x15,
+    ODOM_GLOBAL_T       = 0x16,
     ERROR_MSG           = 0xFF
 } IDs;
 
@@ -59,7 +62,9 @@ struct BroadCast_Control {
     bool speed_M2 = false;
     bool speed_M3 = false;
     bool speed_M4 = false;
+    bool broad_odom = false;
     bool odom_local = false;
+    bool odom_global = false;
 };
 
 void parse_byte(uint8_t byte);

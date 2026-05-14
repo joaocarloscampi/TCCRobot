@@ -41,6 +41,15 @@ void Odometry::update(void)
 
     x_local_ = x_local_ + vx_local_*10.0f/1000;
     theta_local_ = theta_local_ + w_local_*10.0f/1000;
+
+    theta_local_ = atan2(sin(theta_local_), cos(theta_local_));
+
+    float dx = vx_local_*10.0f/1000 * cos(theta_local_);
+    float dy = vx_local_*10.0f/1000 * sin(theta_local_);
+
+    x_global_ += dx;
+    y_global_ += dy;
+    theta_global_ = theta_local_;
 }
 
 void Odometry::set_v_M1(float v_M1) { v_M1_ = v_M1; }

@@ -2,6 +2,7 @@
 #define ODOMETRY_HPP
 
 #include <stdio.h>
+#include <math.h>
 #include "pico/stdlib.h"
 
 #define TS_CONTROL 10
