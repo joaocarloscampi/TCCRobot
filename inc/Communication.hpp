@@ -30,29 +30,33 @@ enum ParserState {
 };
 
 typedef enum {
+    // TODO: Definir tempo de transmissao broadcast na mensagem de request
     SETPOINT_M1         = 0x00,
     SETPOINT_M2         = 0x01,
     SETPOINT_M3         = 0x02,
     SETPOINT_M4         = 0x03,
     SETPOINT_ROBOT      = 0x04,
-    ACK_SETPOINT_M1     = 0x05,
-    ACK_SETPOINT_M2     = 0x06,
-    ACK_SETPOINT_M3     = 0x07,
-    ACK_SETPOINT_M4     = 0x08,
-    ACK_SETPOINT_ROBOT  = 0x09,
-    REQUEST_M1          = 0x0A,
-    REQUEST_M2          = 0x0B,
-    REQUEST_M3          = 0x0C,
-    REQUEST_M4          = 0x0D,
-    SPEED_M1            = 0x0E,
-    SPEED_M2            = 0x0F,
-    SPEED_M3            = 0x10,
-    SPEED_M4            = 0x11,
-    REQUEST_ODOM        = 0x12,
-    ODOM_LOCAL          = 0x13,
-    ODOM_GLOBAL_X       = 0x14,
-    ODOM_GLOBAL_Y       = 0x15,
-    ODOM_GLOBAL_T       = 0x16,
+    REQUEST_M1          = 0x05,
+    REQUEST_M2          = 0x06,
+    REQUEST_M3          = 0x07,
+    REQUEST_M4          = 0x08,
+    SPEED_M1            = 0x09,
+    SPEED_M2            = 0x0A,
+    SPEED_M3            = 0x0B,
+    SPEED_M4            = 0x0C,
+    REQUEST_ODOM        = 0x0D,
+    ODOM_LOCAL          = 0x0E,
+    ODOM_GLOBAL_X       = 0x10,
+    ODOM_GLOBAL_Y       = 0x11,
+    ODOM_GLOBAL_T       = 0x12,
+    SET_WEIGHT          = 0x13,
+    REQUEST_KP          = 0x14,
+    REQUEST_TI          = 0x15,
+    REQUEST_TD          = 0x16,
+    KP_MOTOR            = 0x17,
+    TI_MOTOR            = 0x18,
+    TD_MOTOR            = 0x19,
+    ACK_MSG             = 0xFE,
     ERROR_MSG           = 0xFF
 } IDs;
 
@@ -99,6 +103,7 @@ public:
     void add_motor(Motor* motor_address, uint8_t ID_MOTOR);
     void get_odometry(Odometry* odom);
     void broadcast_manager();
+    void ACK_message(uint8_t id_msg);
 
 private:
     uart_inst_t* uart_handler_;

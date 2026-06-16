@@ -119,7 +119,7 @@ void Communication::handle_message(uint8_t id, uint8_t* data) {
             float value;
             memcpy(&value, data, 4);
             motor1->set_control_setpoint(value);
-            send(ACK_SETPOINT_M1, data);
+            ACK_message(SETPOINT_M1);
             
             break;
         }
@@ -127,7 +127,7 @@ void Communication::handle_message(uint8_t id, uint8_t* data) {
             float value;
             memcpy(&value, data, 4);
             motor2->set_control_setpoint(value);
-            send(ACK_SETPOINT_M2, data);
+            ACK_message(SETPOINT_M2);
             
             break;
         }
@@ -135,7 +135,7 @@ void Communication::handle_message(uint8_t id, uint8_t* data) {
             float value;
             memcpy(&value, data, 4);
             motor3->set_control_setpoint(value);
-            send(ACK_SETPOINT_M3, data);
+            ACK_message(SETPOINT_M3);
             
             break;
         }
@@ -143,7 +143,7 @@ void Communication::handle_message(uint8_t id, uint8_t* data) {
             float value;
             memcpy(&value, data, 4);
             motor4->set_control_setpoint(value);
-            send(ACK_SETPOINT_M4, data);
+            ACK_message(SETPOINT_M4);
             
             break;
         }
@@ -156,8 +156,6 @@ void Communication::handle_message(uint8_t id, uint8_t* data) {
 
             float v_linear = v_linear_int / escala;
             float v_angular = v_angular_int / escala;
-            //float v_linear = float(data[0]) + float(data[1])/100;
-            //float v_angular = float(data[2]) + float(data[3])/100;
 
             float c = 0.1;
             float r = 0.06;
@@ -169,6 +167,8 @@ void Communication::handle_message(uint8_t id, uint8_t* data) {
             motor2->set_control_setpoint(vR);
             motor3->set_control_setpoint(vL);
             motor4->set_control_setpoint(vL);
+
+            ACK_message(SETPOINT_ROBOT);
             
             break;
         }
@@ -177,6 +177,9 @@ void Communication::handle_message(uint8_t id, uint8_t* data) {
         {
             bool enable_broad = data[3] & 0x01;               
             cnt_broad.speed_M1 = enable_broad;
+
+            ACK_message(REQUEST_M1);
+
             break;
         }
 
@@ -184,6 +187,9 @@ void Communication::handle_message(uint8_t id, uint8_t* data) {
         {
             bool enable_broad = data[3] & 0x01;               
             cnt_broad.speed_M2 = enable_broad;
+
+            ACK_message(REQUEST_M2);
+
             break;
         }
 
@@ -191,6 +197,9 @@ void Communication::handle_message(uint8_t id, uint8_t* data) {
         {
             bool enable_broad = data[3] & 0x01;               
             cnt_broad.speed_M3 = enable_broad;
+
+            ACK_message(REQUEST_M3);
+
             break;
         }
 
@@ -198,6 +207,9 @@ void Communication::handle_message(uint8_t id, uint8_t* data) {
         {
             bool enable_broad = data[3] & 0x01;               
             cnt_broad.speed_M4 = enable_broad;
+
+            ACK_message(REQUEST_M4);
+
             break;
         }
 
@@ -209,6 +221,148 @@ void Communication::handle_message(uint8_t id, uint8_t* data) {
             cnt_broad.broad_odom = enable_broad;
             cnt_broad.odom_local = enable_odom_local;
             cnt_broad.odom_global = enable_odom_global;
+
+            ACK_message(REQUEST_ODOM);
+
+            break;
+        }
+
+        case SET_WEIGHT:
+        {
+            float weight;
+            memcpy(&weight, data, 4);
+            motor1->apply_gain_scheduling(weight);
+            motor2->apply_gain_scheduling(weight);
+            motor3->apply_gain_scheduling(weight);
+            motor4->apply_gain_scheduling(weight);
+
+            ACK_message(SET_WEIGHT);
+
+            break;
+        }
+
+        case REQUEST_KP:
+        {
+            uint8_t motor_request = data[0];
+
+            int16_t kp_motor = 0;
+            int16_t escala = 10;
+            uint8_t send_data[4] = {0,0,0,0};
+
+            switch (motor_request)
+            {
+                case 1:
+                    kp_motor = escala*int16_t(motor1->get_gain_Kp());
+                    send_data[0] = 0x1;
+                    break;
+                
+                case 2:
+                    kp_motor = escala*int16_t(motor2->get_gain_Kp());
+                    send_data[0] = 0x2;
+                    break;
+                
+                case 3:
+                    kp_motor = escala*int16_t(motor3->get_gain_Kp());
+                    send_data[0] = 0x3;
+                    break;
+                
+                case 4:
+                    kp_motor = escala*int16_t(motor4->get_gain_Kp());
+                    send_data[0] = 0x4;
+                    break;
+                
+                default:
+                    return;
+                    break;
+            }
+
+            memcpy(&send_data[1], &kp_motor, 2);
+
+            send(KP_MOTOR, send_data);
+
+            break;
+        }
+
+        case REQUEST_TI:
+        {
+            uint8_t motor_request = data[0];
+
+            int16_t ti_motor = 0;
+            int16_t escala = 100;
+            uint8_t send_data[4] = {0,0,0,0};
+
+            switch (motor_request)
+            {
+                case 1:
+                    ti_motor = int16_t(escala*motor1->get_gain_Kp()/motor1->get_gain_Ki());
+                    send_data[0] = 0x1;
+                    break;
+                
+                case 2:
+                    ti_motor = int16_t(escala*motor2->get_gain_Kp()/motor2->get_gain_Ki());
+                    send_data[0] = 0x2;
+                    break;
+                
+                case 3:
+                    ti_motor = int16_t(escala*motor3->get_gain_Kp()/motor3->get_gain_Ki());
+                    send_data[0] = 0x3;
+                    break;
+                
+                case 4:
+                    ti_motor = int16_t(escala*motor4->get_gain_Kp()/motor4->get_gain_Ki());
+                    send_data[0] = 0x4;
+                    break;
+                
+                default:
+                    return;
+                    break;
+            }
+
+            memcpy(&send_data[1], &ti_motor, 2);
+
+            send(TI_MOTOR, send_data);
+
+            break;
+        }
+
+        case REQUEST_TD:
+        {
+            uint8_t motor_request = data[0];
+
+            int16_t td_motor = 0;
+            int16_t escala = 100;
+            uint8_t send_data[4] = {0,0,0,0};
+
+            switch (motor_request)
+            {
+                case 1:
+                    td_motor = escala*int16_t(motor1->get_gain_Kp()*motor1->get_gain_Kd());
+                    send_data[0] = 0x1;
+                    break;
+                
+                case 2:
+                    td_motor = escala*int16_t(motor2->get_gain_Kp()*motor2->get_gain_Kd());
+                    send_data[0] = 0x2;
+                    break;
+                
+                case 3:
+                    td_motor = escala*int16_t(motor3->get_gain_Kp()*motor3->get_gain_Kd());
+                    send_data[0] = 0x3;
+                    break;
+                
+                case 4:
+                    td_motor = escala*int16_t(motor4->get_gain_Kp()*motor4->get_gain_Kd());
+                    send_data[0] = 0x4;
+                    break;
+                
+                default:
+                    return;
+                    break;
+            }
+
+            memcpy(&send_data[1], &td_motor, 2);
+
+            send(TD_MOTOR, send_data);
             break;
         }
 
@@ -234,15 +388,6 @@ void Communication::send(uint8_t id, uint8_t* data) {
     frame_send[7] = END_HEADER;
 
     uart_write_blocking(uart_handler_, frame_send, FRAME_SIZE);
-
-    /*
-    for(int i=0; i<FRAME_SIZE; i++)
-    {
-        uart_write_blocking(uart_handler_, &frame_send[i], 1);
-        uart_puts(uart_handler_, "\n\r");
-    }
-    uart_puts(uart_handler_, "----\n\r");
-    */
     
 }
 
@@ -349,4 +494,11 @@ void Communication::broadcast_manager()
         send(ODOM_GLOBAL_T, bytes);
 
     }
+}
+
+void Communication::ACK_message(uint8_t id_msg)
+{
+    uint8_t bytes[4] = {0,0,0,0};
+    bytes[0] = id_msg;
+    send(ACK_MSG, bytes);
 }

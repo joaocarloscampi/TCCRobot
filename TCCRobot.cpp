@@ -95,6 +95,7 @@ int main()
     motorEsquerdo_Frente.forward();
     motorEsquerdo_Tras.forward();
 
+    // Default gains
     float Ts = 0.01f;
     float Kp = 15.0f;
     float Ti = 0.05f;
@@ -171,6 +172,7 @@ int main()
 
         if(ts_time)
         {
+            pico_set_led(true);
             ts_time = false;
 
             /*
@@ -264,8 +266,9 @@ int main()
             odometry.update();
             comm.broadcast_manager();
 
-            pico_set_led(led_state);
-            led_state = !led_state;
+            pico_set_led(false);
+            //pico_set_led(led_state);
+            //led_state = !led_state;
         }
         
     }
